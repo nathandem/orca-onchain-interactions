@@ -12,7 +12,7 @@ use solana_program::{
 use spl_associated_token_account;
 use spl_token::{instruction::approve as token_approve, state::Account as TokenAccount};
 
-use crate::instruction::CreditInstruction;
+use crate::{instruction::CreditInstruction, whirlpool::{pricemath_sqrt_price_x64_to_price, u64_to_decimal}};
 
 use crate::whirlpool::Whirlpool;
 
@@ -124,7 +124,19 @@ pub fn read_bono_price(
     let whirlpool_account_info = next_account_info(account_info_iter)?;
     let whirlpool = Whirlpool::try_from_slice(whirlpool_account_info.data.borrow().as_ref())?;
 
-    msg!("Whirlpool account: {:?}", whirlpool);
+    let sqrt_price_x64 = whirlpool.sqrt_price;
+    let decimals_a = 9; // BONO
+    let decimals_b = 6; // USDC
+    let ui_price = pricemath_sqrt_price_x64_to_price(sqrt_price_x64, decimals_a, decimals_b);
+
+    msg!("Whirlpool account sqrt_price_x64: {:?}", sqrt_price_x64);
+    msg!("Whirlpool account ui_price: {:?}", ui_price.trunc_with_scale(6));
+
+    msg!("BONO amount in u64: {:?}", bono_amount);
+    
+    // to avoid precision loss, it is nice to use integer math only (using Decimal is just sample code to show what the data is)
+    let usdc_value = ui_price * u64_to_decimal(bono_amount, decimals_a);
+    msg!("BONO amount in USDC: {:?}", usdc_value.trunc_with_scale(6));
 
     Ok(())
 }

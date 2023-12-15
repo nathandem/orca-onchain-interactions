@@ -1,2 +1,3 @@
 target/
-test-ledger/
+tests/test-ledger/
+tests/node_modules/

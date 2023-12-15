@@ -67,3 +67,26 @@ pub struct WhirlpoolRewardInfo {
     /// emissions were turned on.
     pub growth_global_x64: u128,
 }
+
+
+use rust_decimal::prelude::*;
+use rust_decimal::MathematicalOps;
+
+// https://orca-so.github.io/whirlpools/classes/PriceMath.html#sqrtPriceX64ToPrice
+// https://github.com/orca-so/whirlpools/blob/main/sdk/src/utils/public/price-math.ts#L22
+pub fn pricemath_sqrt_price_x64_to_price(sqrt_price_x64: u128, decimals_a: i8, decimals_b: i8) -> Decimal {
+  let sqrt_price_x64_decimal = Decimal::from_str(&sqrt_price_x64.to_string()).unwrap();
+
+  let price = sqrt_price_x64_decimal
+    .checked_div(Decimal::TWO.powu(64)).unwrap()
+    .powu(2)
+    .checked_mul(Decimal::TEN.powi((decimals_a - decimals_b) as i64)).unwrap();
+  
+  return price;
+}
+
+pub fn u64_to_decimal(amount: u64, decimals: i8) -> Decimal {
+  let amount_as_decimal = Decimal::from_str(&amount.to_string()).unwrap();
+  let decimal_adjusted_amount = amount_as_decimal.checked_div(Decimal::TEN.powi(decimals as i64)).unwrap();
+  return decimal_adjusted_amount;
+}

@@ -19,6 +19,11 @@ spl-associated-token-account = { version="~2.0", features = [ "no-entrypoint" ] 
 borsh = "~0.10.3"
 thiserror = "~1.0.44"
 
+# to handle ui price on chain
+# whirlpool program use sqrt_price on chain and not use ui price
+rust_decimal = { version = "1.23", features = ["maths"] }
+rust_decimal_macros = "1.23"
+
 [dev-dependencies]
 assert_matches = "~1.5.0"
 serde_json = "~1.0.96"
