@@ -14,6 +14,8 @@ use spl_token::{instruction::approve as token_approve, state::Account as TokenAc
 
 use crate::instruction::CreditInstruction;
 
+use crate::whirlpool::Whirlpool;
+
 // Unique PDAs, created once and used as support to the program
 pub const CREDIT_SIGNING_PDA_SEED: &[u8] = b"CREDIT_SIGNING_PDA";
 
@@ -117,7 +119,12 @@ pub fn read_bono_price(
     accounts: &[AccountInfo],
     bono_amount: u64,
 ) -> ProgramResult {
-    // TODO: read bono_amount price in USDC
+    let account_info_iter = &mut accounts.iter();
+
+    let whirlpool_account_info = next_account_info(account_info_iter)?;
+    let whirlpool = Whirlpool::try_from_slice(whirlpool_account_info.data.borrow().as_ref())?;
+
+    msg!("Whirlpool account: {:?}", whirlpool);
 
     Ok(())
 }
