@@ -6,6 +6,7 @@ use solana_program::program_error::ProgramError;
 #[derive(BorshDeserialize)]
 struct SwapPayload {
     usdc_amount: u64,
+    bono_amount_threshold: u64,
 }
 
 #[derive(BorshDeserialize)]
@@ -16,7 +17,7 @@ struct ReadBonoPricePayload {
 // PROGRAM INSTRUCTIONS
 
 pub enum CreditInstruction {
-    Swap { usdc_amount: u64 },
+    Swap { usdc_amount: u64, bono_amount_threshold: u64 },
     ReadBonoPrice { bono_amount: u64 },
 }
 
@@ -31,6 +32,7 @@ impl CreditInstruction {
                     SwapPayload::try_from_slice(rest).expect("Invalid data payload for variant 0");
                 Self::Swap {
                     usdc_amount: payload.usdc_amount,
+                    bono_amount_threshold: payload.bono_amount_threshold,
                 }
             }
             1 => {
