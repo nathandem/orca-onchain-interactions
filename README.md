@@ -85,3 +85,66 @@ txInfo(log): [
   'Program 82XBkYcPfaevmCNDJwV4EPcDrhWbvonN9iCUJaorfCRj success'
 ]
 ```
+
+```
+$ ts-node invoke_swap.ts
+```
+
+output should be
+```
+rpc: http://localhost:8899
+wallet: AyZz8kpXG3MKMkaXFS3yiEHbzKf98NwwrAaoLGnoYy27
+decimalsA (BONO): 9
+decimalsB (USDC): 6
+quote.amount: 1000000
+quote.otherAmountThreshold: 2798074270
+quote.tickArray0: AnxYYj2gaKbGYqtHTJuLZVff6yZBnG4qVzywHshAaHYp
+quote.tickArray1: 7oqxtmUZuTGoCNEzfF7pRSYYrEQe294nMnT5Fas1Amy3
+quote.tickArray2: FmtmwHixM8g1hAvo49N2xW6AEBaoGsMcVcyB9NkQvJDj
+status: { context: { slot: 13 }, value: { err: null } }
+txInfo(log): [
+  'Program 82XBkYcPfaevmCNDJwV4EPcDrhWbvonN9iCUJaorfCRj invoke [1]',
+  'Program log: process_instruction: 82XBkYcPfaevmCNDJwV4EPcDrhWbvonN9iCUJaorfCRj: 16 accounts, data=[0, 64, 66, 15, 0, 0, 0, 0, 0, 158, 57, 199, 166, 0, 0, 0, 0]',
+  'Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL invoke [2]',
+  'Program log: CreateIdempotent',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]',
+  'Program log: Instruction: GetAccountDataSize',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1595 of 152603 compute units',
+  'Program return: TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA pQAAAAAAAAA=',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program 11111111111111111111111111111111 invoke [3]',
+  'Program 11111111111111111111111111111111 success',
+  'Program log: Initialize the associated token account',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]',
+  'Program log: Instruction: InitializeImmutableOwner',
+  'Program log: Please upgrade to SPL Token 2022 for immutable owner support',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 1405 of 145990 compute units',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]',
+  'Program log: Instruction: InitializeAccount3',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4214 of 142106 compute units',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL consumed 27998 of 165586 compute units',
+  'Program ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL success',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [2]',
+  'Program log: Instruction: Approve',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 2904 of 133955 compute units',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc invoke [2]',
+  'Program log: Instruction: Swap',
+  'Program log: fee_growth: 2227780281713',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]',
+  'Program log: Instruction: Transfer',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4735 of 87018 compute units',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA invoke [3]',
+  'Program log: Instruction: Transfer',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA consumed 4645 of 79363 compute units',
+  'Program TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA success',
+  'Program whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc consumed 50974 of 122151 compute units',
+  'Program whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc success',
+  'Program 82XBkYcPfaevmCNDJwV4EPcDrhWbvonN9iCUJaorfCRj consumed 129618 of 200000 compute units',
+  'Program 82XBkYcPfaevmCNDJwV4EPcDrhWbvonN9iCUJaorfCRj success'
+]
+programBonoAtaBalance: 2.826055013
+```

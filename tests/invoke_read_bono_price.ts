@@ -67,7 +67,7 @@ async function main() {
   // get transaction info
   const getTransactionConfig: GetVersionedTransactionConfig = { commitment: "confirmed", maxSupportedTransactionVersion: 0 };
   const txInfo = await connection.getTransaction(signature, getTransactionConfig);
-  console.log("txInfo(log):", txInfo.meta.logMessages);
+  console.log("txInfo(log):", txInfo?.meta?.logMessages);
 }
 
 main();

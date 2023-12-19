@@ -8,8 +8,9 @@ use solana_program::{
     program_pack::Pack,
     pubkey::Pubkey,
     system_program,
+    instruction::{Instruction, AccountMeta},
 };
-use spl_associated_token_account;
+use spl_associated_token_account::instruction::create_associated_token_account_idempotent;
 use spl_token::{instruction::approve as token_approve, state::Account as TokenAccount};
 
 use crate::{instruction::CreditInstruction, whirlpool::{pricemath_sqrt_price_x64_to_price, u64_to_decimal}};
@@ -26,8 +27,8 @@ pub fn process_instruction(
 ) -> ProgramResult {
     let instruction = CreditInstruction::unpack(instruction_data)?;
     match instruction {
-        CreditInstruction::Swap { usdc_amount } => {
-            swap_usdc_for_bono(program_id, accounts, usdc_amount)
+        CreditInstruction::Swap { usdc_amount, bono_amount_threshold } => {
+            swap_usdc_for_bono(program_id, accounts, usdc_amount, bono_amount_threshold)
         }
         CreditInstruction::ReadBonoPrice { bono_amount } => {
             read_bono_price(program_id, accounts, bono_amount)
@@ -56,20 +57,58 @@ pub fn swap_usdc_for_bono(
     program_id: &Pubkey,
     accounts: &[AccountInfo],
     usdc_amount: u64,
+    bono_amount_threshold: u64,
 ) -> ProgramResult {
     let account_info_iter = &mut accounts.iter();
 
     // 1. Check accounts, including enough USDC owner by user
-    let signer_info = next_account_info(account_info_iter)?;
     let system_program_info = next_account_info(account_info_iter)?;
     let token_program_info = next_account_info(account_info_iter)?; // for transfers
     let associated_token_account_program_info = next_account_info(account_info_iter)?;
-    let credit_signing_pda_info = next_account_info(account_info_iter)?;
+    let whirlpool_program_info = next_account_info(account_info_iter)?;
+
+    let bono_mint_info = next_account_info(account_info_iter)?;
+
+    let signer_info = next_account_info(account_info_iter)?;
     let signer_usdc_ata_info = next_account_info(account_info_iter)?;
+
+    let credit_signing_pda_info = next_account_info(account_info_iter)?;
     let credit_signing_pda_bono_ata_info = next_account_info(account_info_iter)?;
+
+    let whirlpool_info = next_account_info(account_info_iter)?;
+    let vault_a_bono_info = next_account_info(account_info_iter)?;
+    let vault_b_usdc_info = next_account_info(account_info_iter)?;
+    let tick_array_0_info = next_account_info(account_info_iter)?;
+    let tick_array_1_info = next_account_info(account_info_iter)?;
+    let tick_array_2_info = next_account_info(account_info_iter)?;
+    let oracle_info = next_account_info(account_info_iter)?;
+
+    // derive bump
+    let (credit_signing_pda_key, bump) = Pubkey::find_program_address(
+        &[CREDIT_SIGNING_PDA_SEED],
+        program_id,
+    );
+    assert!(credit_signing_pda_key == *credit_signing_pda_info.key);
 
     // note: during the first call, `credit_signing_pda_info` and `credit_signing_pda_bono_ata_info`
     // would have to be created, I'm just not doing it here to save space.
+    invoke(
+        &create_associated_token_account_idempotent(
+            signer_info.key,
+            credit_signing_pda_info.key,
+            bono_mint_info.key,
+            token_program_info.key,
+        ),
+        &[
+            associated_token_account_program_info.clone(),
+            signer_info.clone(), // funder
+            credit_signing_pda_bono_ata_info.clone(), // ata
+            credit_signing_pda_info.clone(), // owner
+            bono_mint_info.clone(), // mint
+            system_program_info.clone(),
+            token_program_info.clone(),
+        ],
+    )?;
 
     // TODO: add the accounts needed to perform the swap
     // note: the whirlpool to use is https://v1.orca.so/liquidity/browse?tokenMint=CzYSquESBM4qVQiFas6pSMgeFRG4JLiYyNYHQUcNxudc
@@ -93,6 +132,7 @@ pub fn swap_usdc_for_bono(
             usdc_amount,
         )?,
         &[
+            token_program_info.clone(),
             signer_usdc_ata_info.clone(),
             credit_signing_pda_info.clone(),
             signer_info.clone(),
@@ -102,8 +142,46 @@ pub fn swap_usdc_for_bono(
     // 3. Swap USDC for BONO
     // note: all the USDC passed should be used, market price is okay for the swap (no limit)
     // the recipient of the BONO should be `credit_signing_pda_bono_ata_info``
-
-    // TODO: code to perform the swap on the orca pool
+    let mut swap_data: Vec<u8> = vec![0xf8, 0xc6, 0x9e, 0x91, 0xe1, 0x75, 0x87, 0xc8]; // ix code
+    swap_data.extend_from_slice(&usdc_amount.to_le_bytes()); // amount
+    swap_data.extend_from_slice(&bono_amount_threshold.to_le_bytes()); // other_amount_threshold
+    swap_data.extend_from_slice(&79226673515401279992447579055u128.to_le_bytes()); // sqrt_price_limit
+    swap_data.extend_from_slice(&1u8.to_le_bytes()); // amount_specified_is_input (true, amount is USDC input)
+    swap_data.extend_from_slice(&0u8.to_le_bytes()); // a_to_b (false, we want to swap B(USDC) for A(BONO))
+    invoke_signed(
+        &Instruction {
+            program_id: whirlpool_program_info.key.clone(),
+            accounts: vec![
+                AccountMeta::new_readonly(token_program_info.key.clone(), false),
+                AccountMeta::new_readonly(credit_signing_pda_info.key.clone(), true),
+                AccountMeta::new(whirlpool_info.key.clone(), false),
+                AccountMeta::new(credit_signing_pda_bono_ata_info.key.clone(), false),
+                AccountMeta::new(vault_a_bono_info.key.clone(), false),
+                AccountMeta::new(signer_usdc_ata_info.key.clone(), false),
+                AccountMeta::new(vault_b_usdc_info.key.clone(), false),
+                AccountMeta::new(tick_array_0_info.key.clone(), false),
+                AccountMeta::new(tick_array_1_info.key.clone(), false),
+                AccountMeta::new(tick_array_2_info.key.clone(), false),
+                AccountMeta::new_readonly(oracle_info.key.clone(), false),
+            ],
+            data: swap_data,
+        },
+        &[
+            whirlpool_program_info.clone(),
+            token_program_info.clone(),
+            credit_signing_pda_info.clone(),
+            whirlpool_info.clone(),
+            credit_signing_pda_bono_ata_info.clone(),
+            vault_a_bono_info.clone(),
+            signer_usdc_ata_info.clone(),
+            vault_b_usdc_info.clone(),
+            tick_array_0_info.clone(),
+            tick_array_1_info.clone(),
+            tick_array_2_info.clone(),
+            oracle_info.clone(),
+        ],
+        &[&[CREDIT_SIGNING_PDA_SEED, &[bump]]],
+    )?;
 
     Ok(())
 }
